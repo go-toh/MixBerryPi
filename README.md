@@ -1,4 +1,4 @@
-# MixBerryi Project
+# MixBerryPi Project
 
 ## これはなに？
 
