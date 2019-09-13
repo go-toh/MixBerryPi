@@ -1,6 +1,6 @@
 # MixBerryPi Project
 
-![MixBerryPi](https://github.com/KurumiAllergy/image/blob/master/mix1.png "image1")
+![MixBerryPi](https://github.com/KurumiAllergy/image/blob/master/miximage1.png "image1")
 
 ## これはなに？
 
