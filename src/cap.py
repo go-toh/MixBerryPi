@@ -1,20 +1,15 @@
 """ main program """
 import picamera
-import io
-import os
 import datetime
 import time
-import cv2
-
-#画像データ管理
 
 #画像取得
-def image_cap(time):
-    with picamera.Picamera as camera:
+def image_cap(nowtime):
+    with picamera.PiCamera() as camera:
         camera.resolution = (1024, 768)
         camera.start_preview()
         time.sleep(3)
-        camera.capture(get_time()+".jpg")
+        camera.capture(nowtime+".jpg")
 
 #時刻取得
 def get_time():
@@ -24,7 +19,8 @@ def get_time():
 
 #main関数
 def main():
-    image_cap()
+    gettime = get_time()
+    image_cap(gettime)
     
 if __name__ == "__main__":
     main()
