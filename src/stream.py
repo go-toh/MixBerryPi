@@ -14,6 +14,8 @@ with picamera.PiCamera() as camera:
         image = cv2.imdecode(data,1)
         cv2.imshow('image',image)
         key = cv2.waitKey(100)
+        
+        #Escキーで終了
         if key == 27:
             break
     
