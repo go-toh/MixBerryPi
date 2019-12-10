@@ -8,7 +8,7 @@ import time
 #画像取得
 def image_cap():
     camera.resolution = (3280, 1845)#16:9
-    camera.capture(get_time()+".jpg")
+    camera.capture("image/"+get_time()+".jpg")
     camera.resolution = (480, 270)
     time.sleep(0.1)
 
