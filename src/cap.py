@@ -4,12 +4,12 @@ import datetime
 import time
 
 #画像取得
-def image_cap(nowtime):
+def image_cap():
     with picamera.PiCamera() as camera:
-        camera.resolution = (1024, 768)
+        camera.resolution = (3280, 2464)#MAX解像度
         camera.start_preview()
         time.sleep(3)
-        camera.capture(nowtime+".jpg")
+        camera.capture(get_time()+".jpg")
 
 #時刻取得
 def get_time():
@@ -19,8 +19,7 @@ def get_time():
 
 #main関数
 def main():
-    gettime = get_time()
-    image_cap(gettime)
+    image_cap()
     
 if __name__ == "__main__":
     main()
