@@ -6,6 +6,18 @@ import io
 import time
 import datetime
 
+#画像取得
+def image_cap():
+    camera.resolution = (3280, 1845)#16:9
+    camera.capture("image/"+get_time()+".jpg")
+    camera.resolution = (480, 270)
+
+#時刻取得
+def get_time():
+    dt_time = datetime.datetime.now()
+    nowtime = dt_time.strftime("%Y%m%d%H%M%S")
+    return nowtime
+
 def set_input_tensor(interpreter, image):
     tensor_index = interpreter.get_input_details()[0]['index']
     input_tensor = interpreter.tensor(tensor_index)()[0]
@@ -27,34 +39,31 @@ def detect_objects(interpreter, image):
     
     results = []
     for i in range(count):
+        #推論で50%以上の確率の場合
         if scores[i] >= 0.5:
             result = {
             'bounding_box': boxes[i],
             'class_id': classes[i],
-            'score': scores[i]
+            'score': scores[i],
+            'label': LABELS[int(classes[i]+1)]
             }
             results.append(result)
     return results
 
-def draw_box(results, label):
+def draw_box(results, height, width):
     for obj in results:
         ymin, xmin, ymax, xmax = obj['bounding_box']
-        print(ymin, xmin, ymax, xmax)
+        xmin = int(xmin * width)
+        xmax = int(xmax * width)
+        ymin = int(ymin * height)
+        ymax = int(ymax * height)
+        score = str(round(obj['score'], 2))
+        label = obj['label']
+        cv2.rectangle(showimage, (xmin,ymax), (xmax,ymin), (0, 255, 0), 1)
+        cv2.putText(showimage, label+' '+score, (xmin,ymin-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        print(f'{label} ({xmin},{ymax}), ({xmax},{ymin}) score=>{score}')
 
-#画像取得
-def image_cap():
-    camera.resolution = (3280, 1845)#16:9
-    camera.capture("image/"+get_time()+".jpg")
-    camera.resolution = (480, 270)
-    time.sleep(0.1)
-
-#時刻取得
-def get_time():
-    dt_time = datetime.datetime.now()
-    nowtime = dt_time.strftime("%Y%m%d%H%M%S")
-    return nowtime
-
-labels = [
+LABELS = [
 '???','person','bicycle','car','motorcycle','airplane','bus','train','truck','boat',
 'traffic light','fire hydrant','???','stop sign','parking meter','bench','bird','cat','dog','horse',
 'sheep','cow','elephant','bear','zebra','giraffe','???','backpack','umbrella','???',
@@ -66,35 +75,37 @@ labels = [
 'toaster','sink','refrigerator','???','book','clock','vase','scissors','teddy bear','hair drier',
 'toothbrush']
 
-interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
-interpreter.allocate_tensors()
-_, input_height, input_width, _ = interpreter.get_input_details()[0]['shape']
+if __name__ == '__main__':
+    interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
+    interpreter.allocate_tensors()
+    #ストリーム取得
+    with picamera.PiCamera() as camera:
+        camera.resolution = (480, 270)
+        camera.framerate = 30
+        height, width = 270, 480
+        stream = io.BytesIO()
+        interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
+        interpreter.allocate_tensors()
 
-#ストリーム取得
-with picamera.PiCamera() as camera:
-    camera.resolution = (300, 300)
-    camera.framerate = 30
-    stream = io.BytesIO()
-    key=0
+        while True:
+            camera.capture(stream, format='jpeg', use_video_port=True, resize=(300,300))
+            frame = np.frombuffer(stream.getvalue(), dtype=np.uint8)
+            image = cv2.imdecode(frame,1)
+            results = detect_objects(interpreter, image)
+            showimage = cv2.resize(image, (480, 270))
+            draw_box(results, height, width)
+            cv2.imshow('image',showimage)
+            stream.truncate()
+            stream.seek(0)
 
-    while True:
-        camera.capture(stream, format='jpeg', use_video_port=True)
-        frame = np.frombuffer(stream.getvalue(), dtype=np.uint8)
-        image = cv2.imdecode(frame,1)
-        results = detect_objects(interpreter, image)
-        print(results)
-        cv2.imshow('image',image)
-        stream.truncate()
-        stream.seek(0)
-        
-        key = cv2.waitKey(1)
-        #Enter Key
-        if key == 13:
-            image_cap()
-            print("capture")
-        #Esc key
-        if key == 27:
-            print("end")
-            break
+            key = cv2.waitKey(1)
+            #Enter Key
+            if key == 13:
+                image_cap()
+                print("capture")
+            #Esc key
+            if key == 27:
+                print("end")
+                break
+    cv2.destroyAllWindows()
 
-cv2.destroyAllWindows()

@@ -49,7 +49,7 @@ def draw_box(results, height, width):
         print(f'{index} {label} ({xmin},{ymax}), ({xmax},{ymin}) score=>{score}')
 
 LABELS = [
-'???''person','bicycle','car','motorcycle','airplane','bus','train','truck','boat',
+'???','person','bicycle','car','motorcycle','airplane','bus','train','truck','boat',
 'traffic light','fire hydrant','???','stop sign','parking meter','bench','bird','cat','dog','horse',
 'sheep','cow','elephant','bear','zebra','giraffe','???','backpack','umbrella','???',
 '???','handbag','tie','suitcase','frisbee','skis','snowboard','sports ball','kite','baseball bat',
