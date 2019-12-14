@@ -61,7 +61,7 @@ LABELS = [
 'toothbrush']
 
 if __name__ == '__main__':
-    image = cv2.imread("image/dog.jpg")
+    image = cv2.imread("sample/dog.jpg")
     height, width = image.shape[:2]
     detectimage = cv2.resize(image, (300, 300))
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
@@ -70,5 +70,5 @@ if __name__ == '__main__':
     
     if results:
         draw_box(results, height, width)
-        cv2.imwrite('image/result.jpg',image)
+        cv2.imwrite('sample/result.jpg',image)
     
