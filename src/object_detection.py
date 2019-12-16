@@ -7,10 +7,12 @@ import time
 import datetime
 
 #画像取得
-def image_cap():
-    camera.resolution = (3280, 1845)#16:9
-    camera.capture("image/"+get_time()+".jpg")
+def image_cap(width, height):
+    camera.resolution = (width, height)
+    filepath = "image/" + get_time() + ".jpg"
+    camera.capture(filepath)
     camera.resolution = (480, 270)
+    return filepath
 
 #時刻取得
 def get_time():
@@ -50,62 +52,71 @@ def detect_objects(interpreter, image):
             results.append(result)
     return results
 
-def draw_box(results, height, width):
+def draw_box(results, image):
+    height, width = image.shape[:2]
     for obj in results:
-        ymin, xmin, ymax, xmax = obj['bounding_box']
-        xmin = int(xmin * width)
-        xmax = int(xmax * width)
-        ymin = int(ymin * height)
-        ymax = int(ymax * height)
+        position = obj['bounding_box']
+        after = position_set(position, width, height)
         score = str(round(obj['score'], 2))
         label = obj['label']
-        cv2.rectangle(showimage, (xmin,ymax), (xmax,ymin), (0, 255, 0), 1)
-        cv2.putText(showimage, label+' '+score, (xmin,ymin-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        print(f'{label} ({xmin},{ymax}), ({xmax},{ymin}) score=>{score}')
+        cv2.rectangle(image, (after[0],after[1]), (after[2],after[3]), (0, 255, 0), 2)
+        cv2.putText(image, label+' '+score, (after[0],after[3]-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        print(f'{label} ({after[0]},{after[1]}), ({after[2]},{after[3]}) score=>{score}')
+        
 
-LABELS = [
-'???','person','bicycle','car','motorcycle','airplane','bus','train','truck','boat',
-'traffic light','fire hydrant','???','stop sign','parking meter','bench','bird','cat','dog','horse',
-'sheep','cow','elephant','bear','zebra','giraffe','???','backpack','umbrella','???',
-'???','handbag','tie','suitcase','frisbee','skis','snowboard','sports ball','kite','baseball bat',
-'baseball glove','skateboard','surfboard','tennis racket','bottle','???','wine glass','cup','fork','knife',
-'spoon','bowl','banana','apple','sandwich','orange','broccoli','carrot','hot dog','pizza',
-'donut','cake','chair','couch','potted plant','bed','???','dining table','???','???',
-'toilet','???','tv','laptop','mouse','remote','keyboard','cell phone','microwave','oven',
-'toaster','sink','refrigerator','???','book','clock','vase','scissors','teddy bear','hair drier',
-'toothbrush']
+def position_set(position, width, height):
+        ymin, xmin, ymax, xmax = position
+        after_xmin = int(xmin * width)
+        after_ymax = int(ymax * height)
+        after_xmax = int(xmax * width)
+        after_ymin = int(ymin * height)
+        position = [after_xmin, after_ymax, after_xmax, after_ymin]
+        return position
 
 if __name__ == '__main__':
+    LABELS = [
+    '???','person','bicycle','car','motorcycle','airplane','bus','train','truck','boat',
+    'traffic light','fire hydrant','???','stop sign','parking meter','bench','bird','cat','dog','horse',
+    'sheep','cow','elephant','bear','zebra','giraffe','???','backpack','umbrella','???',
+    '???','handbag','tie','suitcase','frisbee','skis','snowboard','sports ball','kite','baseball bat',
+    'baseball glove','skateboard','surfboard','tennis racket','bottle','???','wine glass','cup','fork','knife',
+    'spoon','bowl','banana','apple','sandwich','orange','broccoli','carrot','hot dog','pizza',
+    'donut','cake','chair','couch','potted plant','bed','???','dining table','???','???',
+    'toilet','???','tv','laptop','mouse','remote','keyboard','cell phone','microwave','oven',
+    'toaster','sink','refrigerator','???','book','clock','vase','scissors','teddy bear','hair drier',
+    'toothbrush']
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
     interpreter.allocate_tensors()
+
     #ストリーム取得
     with picamera.PiCamera() as camera:
         camera.resolution = (480, 270)
         camera.framerate = 30
-        height, width = 270, 480
         stream = io.BytesIO()
-        interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
-        interpreter.allocate_tensors()
 
         while True:
             camera.capture(stream, format='jpeg', use_video_port=True, resize=(300,300))
             frame = np.frombuffer(stream.getvalue(), dtype=np.uint8)
-            image = cv2.imdecode(frame,1)
-            results = detect_objects(interpreter, image)
-            showimage = cv2.resize(image, (480, 270))
-            draw_box(results, height, width)
-            cv2.imshow('image',showimage)
+            detectimage = cv2.imdecode(frame,1)
+            results = detect_objects(interpreter, detectimage)
+            resizeimage = cv2.resize(detectimage, (480, 270))
+            draw_box(results, resizeimage)
+            cv2.imshow('image',resizeimage)
             stream.truncate()
             stream.seek(0)
 
             key = cv2.waitKey(1)
             #Enter Key
             if key == 13:
-                image_cap()
+                path = image_cap(3280, 1845)#16:9
+                fullimage = cv2.imread(path)
+                draw_box(results, fullimage)
+                cv2.imwrite('image/result.jpg',fullimage)
                 print("capture")
+
             #Esc key
             if key == 27:
                 print("end")
                 break
-    cv2.destroyAllWindows()
 
+    cv2.destroyAllWindows()
