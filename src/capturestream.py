@@ -33,13 +33,14 @@ with picamera.PiCamera() as camera:
         stream.truncate()
         stream.seek(0)
         
-        key = cv2.waitKey(100)
-        print(key)
+        key = cv2.waitKey(1)
         #Enter Key
         if key == 13:
             image_cap()
+            print("capture")
         #Esc key
         if key == 27:
+            print("end")
             break
 
 cv2.destroyAllWindows()
