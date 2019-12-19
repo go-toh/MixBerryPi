@@ -52,26 +52,18 @@ def detect_objects(interpreter, image):
             results.append(result)
     return results
 
-def draw_box(results, image):
-    height, width = image.shape[:2]
+def set_box_position(results, height, width):
+    set_box = []
     for obj in results:
-        position = obj['bounding_box']
-        after = position_set(position, width, height)
         score = str(round(obj['score'], 2))
         label = obj['label']
-        cv2.rectangle(image, (after[0],after[1]), (after[2],after[3]), (0, 255, 0), 2)
-        cv2.putText(image, label+' '+score, (after[0],after[3]-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        print(f'{label} ({after[0]},{after[1]}), ({after[2]},{after[3]}) score=>{score}')
-        
-
-def position_set(position, width, height):
-        ymin, xmin, ymax, xmax = position
+        ymin, xmin, ymax, xmax = obj['bounding_box']
         after_xmin = int(xmin * width)
         after_ymax = int(ymax * height)
         after_xmax = int(xmax * width)
         after_ymin = int(ymin * height)
-        position = [after_xmin, after_ymax, after_xmax, after_ymin]
-        return position
+        set_box.append([after_xmin, after_ymax, after_xmax, after_ymin, score, label])
+    return set_box
 
 if __name__ == '__main__':
     LABELS = [
@@ -85,6 +77,7 @@ if __name__ == '__main__':
     'toilet','???','tv','laptop','mouse','remote','keyboard','cell phone','microwave','oven',
     'toaster','sink','refrigerator','???','book','clock','vase','scissors','teddy bear','hair drier',
     'toothbrush']
+
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
     interpreter.allocate_tensors()
 
@@ -93,30 +86,47 @@ if __name__ == '__main__':
         camera.resolution = (480, 270)
         camera.framerate = 30
         stream = io.BytesIO()
-
+        path_array = []
         while True:
             camera.capture(stream, format='jpeg', use_video_port=True, resize=(300,300))
             frame = np.frombuffer(stream.getvalue(), dtype=np.uint8)
             detectimage = cv2.imdecode(frame,1)
             results = detect_objects(interpreter, detectimage)
             resizeimage = cv2.resize(detectimage, (480, 270))
-            draw_box(results, resizeimage)
+            stream_height, stream_width = resizeimage.shape[:2]
+            box_position = set_box_position(results, stream_height, stream_width)
+
+            for box in box_position:
+                cv2.rectangle(resizeimage, (box[0],box[1]), (box[2],box[3]), (0, 255, 0), 2)
+                cv2.putText(resizeimage, box[5]+' '+box[4], (box[0],box[3]-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                print(f'{box[5]} ({box[0]},{box[1]}), ({box[2]},{box[3]}) score=>{box[4]}')
+
             cv2.imshow('image',resizeimage)
             stream.truncate()
             stream.seek(0)
-
             key = cv2.waitKey(1)
+
             #Enter Key
             if key == 13:
                 path = image_cap(3280, 1845)#16:9
-                fullimage = cv2.imread(path)
-                draw_box(results, fullimage)
-                cv2.imwrite('image/result.jpg',fullimage)
+                path_array.append(path)
                 print("capture")
-
             #Esc key
             if key == 27:
                 print("end")
                 break
 
     cv2.destroyAllWindows()
+
+    for cap_image in path_array:
+        fullimage = cv2.imread(cap_image)
+        cap_height, cap_width = fullimage.shape[:2]
+        cap_box_position = set_box_position(results, cap_height, cap_width)
+
+        for box in cap_box_position:
+            cv2.rectangle(fullimage, (box[0],box[1]), (box[2],box[3]), (0, 255, 0), 4)
+            cv2.putText(fullimage, box[5]+' '+box[4], (box[0],box[3]-10), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 4)
+            print(f'{box[5]} ({box[0]},{box[1]}), ({box[2]},{box[3]}) score=>{box[4]}')
+                    
+        filename = path.replace('image/', 'image/result')
+        cv2.imwrite(filename, fullimage)
