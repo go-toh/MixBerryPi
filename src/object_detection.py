@@ -125,7 +125,7 @@ if __name__ == '__main__':
 
         for box in cap_box_position:
             cv2.rectangle(fullimage, (box[0],box[1]), (box[2],box[3]), (0, 255, 0), 4)
-            cv2.putText(fullimage, box[5]+' '+box[4], (box[0],box[3]-15), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 4)
+            cv2.putText(fullimage, box[5]+' '+box[4], (box[0],box[3]-10), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 4)
             print(f'{box[5]} ({box[0]},{box[1]}), ({box[2]},{box[3]}) score=>{box[4]}')
                     
         filename = path.replace('image/', 'image/result')
