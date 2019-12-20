@@ -30,6 +30,7 @@ def get_output_tensor(interpreter, index):
     tensor = np.squeeze(interpreter.get_tensor(output_details['index']))
     return tensor
 
+#物体検出の推論
 def detect_objects(interpreter, image):
     set_input_tensor(interpreter, image)
     interpreter.invoke()
@@ -39,10 +40,10 @@ def detect_objects(interpreter, image):
     scores = get_output_tensor(interpreter, 2)
     count = int(get_output_tensor(interpreter, 3))
     
+    #推論結果をresult(dict)に成形しresults(list)に格納
     results = []
     for i in range(count):
-        #推論で50%以上の確率の場合
-        if scores[i] >= 0.5:
+        if scores[i] >= 0.5:#推論で50%以上の確率の場合
             result = {
             'bounding_box': boxes[i],
             'class_id': classes[i],
@@ -82,14 +83,16 @@ if __name__ == '__main__':
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
     interpreter.allocate_tensors()
 
-    #ストリームを取得してリアルタイム物体検出
-    #480*270の画像を300*300にresizeして推論し、480*270に復元してから表示
+    #picameraの設定とlistの宣言
     with picamera.PiCamera() as camera:
         camera.resolution = (480, 270)
         camera.framerate = 30
         stream = io.BytesIO()
         path_array = []
         result_array = []
+
+        #ストリームを取得してリアルタイム物体検出
+        #480*270のストリームを300*300にresizeして推論し、480*270に復元してから表示
         while True:
             camera.capture(stream, format='jpeg', use_video_port=True, resize=(300,300))
             frame = np.frombuffer(stream.getvalue(), dtype=np.uint8)
@@ -98,6 +101,7 @@ if __name__ == '__main__':
             resizeimage = cv2.resize(detectimage, (480, 270))
             stream_height, stream_width = resizeimage.shape[:2]
             box_position = set_box_position(results, stream_height, stream_width)
+
             #boxの描画
             for box in box_position:
                 cv2.rectangle(resizeimage, (box[0],box[1]), (box[2],box[3]), (0, 255, 0), 2)
@@ -107,30 +111,37 @@ if __name__ == '__main__':
             cv2.imshow('image',resizeimage)
             stream.truncate()
             stream.seek(0)
+
+            #キーコードを取得
             key = cv2.waitKey(1)
 
-            #Enter Key
+            #Press 'Enter' Key
             if key == 13:
                 result_array.append(results)
                 path = image_cap(3280, 1845)#16:9
                 path_array.append(path)
                 print("capture")
-            #Esc key
+
+            #Press 'Esc' key
             if key == 27:
                 print("end")
                 break
 
     cv2.destroyAllWindows()
+
     #撮影した画像に物体検出を適用
     for img_num, (cap_path, cap_result) in enumerate(zip(path_array, result_array)):
         fullimage = cv2.imread(cap_path)
         cap_height, cap_width = fullimage.shape[:2]
         cap_box_position = set_box_position(cap_result, cap_height, cap_width)
+
         #boxの描画
         for box_num, box in enumerate(cap_box_position):
+
             #画像の切り出し.img_numが画像のインデックス.box_numが検出領域ごとのインデックス
             img = fullimage[box[3]:box[1], box[0]:box[2]]
             cv2.imwrite('image/' + str(img_num) + '_' + str(box_num) + '_'+ box[5] + '.jpg',img)
+
             #境界線とラベルの描画
             cv2.rectangle(fullimage, (box[0],box[1]), (box[2],box[3]), (0, 255, 0), 4)
             cv2.putText(fullimage, box[5]+' '+box[4], (box[0],box[3]+50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 4)
