@@ -43,18 +43,18 @@ def detect_objects(interpreter, image):
     #推論結果をresult(dict)に成形しresults(list)に格納
     results = []
     for i in range(count):
-        if scores[i] >= 0.5:#推論で50%以上の確率の場合
+        if scores[i] >= 0.5 and classes[i] == 0:#推論で50%以上の確率かつclassesがpersonの場合
             result = {
             'bounding_box': boxes[i],
             'class_id': classes[i],
             'score': scores[i],
-            'label': LABELS[int(classes[i]+1)]
+            'label': LABELS[int(classes[i])]
             }
             results.append(result)
     return results
 
 #resultsを元に画像の縦横に合わせた座標を計算.座標とscoreとlabelを抽出してlistで返す
-def set_box_position(results, height, width):
+def person_position(results, height, width):
     set_box = []
     for obj in results:
         score = str(round(obj['score'], 2))
@@ -71,18 +71,7 @@ def set_box_position(results, height, width):
     return set_box
 
 if __name__ == '__main__':
-    LABELS = [
-    '???','person','bicycle','car','motorcycle','airplane','bus','train','truck','boat',
-    'traffic light','fire hydrant','???','stop sign','parking meter','bench','bird','cat','dog','horse',
-    'sheep','cow','elephant','bear','zebra','giraffe','???','backpack','umbrella','???',
-    '???','handbag','tie','suitcase','frisbee','skis','snowboard','sports ball','kite','baseball bat',
-    'baseball glove','skateboard','surfboard','tennis racket','bottle','???','wine glass','cup','fork','knife',
-    'spoon','bowl','banana','apple','sandwich','orange','broccoli','carrot','hot dog','pizza',
-    'donut','cake','chair','couch','potted plant','bed','???','dining table','???','???',
-    'toilet','???','tv','laptop','mouse','remote','keyboard','cell phone','microwave','oven',
-    'toaster','sink','refrigerator','???','book','clock','vase','scissors','teddy bear','hair drier',
-    'toothbrush']
-
+    LABELS = ['person']
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
     interpreter.allocate_tensors()
 
@@ -104,10 +93,10 @@ if __name__ == '__main__':
 
             if not results:
                 print('Nothing detected')
-                
+
             resizeimage = cv2.resize(detectimage, (480, 270))
             stream_height, stream_width = resizeimage.shape[:2]
-            box_position = set_box_position(results, stream_height, stream_width)
+            box_position = person_position(results, stream_height, stream_width)
 
             #boxの描画
             for box in box_position:
@@ -140,7 +129,7 @@ if __name__ == '__main__':
     for img_num, (cap_path, cap_result) in enumerate(zip(path_array, result_array)):
         fullimage = cv2.imread(cap_path)
         cap_height, cap_width = fullimage.shape[:2]
-        cap_box_position = set_box_position(cap_result, cap_height, cap_width)
+        cap_box_position = person_position(cap_result, cap_height, cap_width)
 
         #boxの描画
         for box_num, box in enumerate(cap_box_position):
