@@ -90,19 +90,20 @@ if __name__ == '__main__':
             frame = np.frombuffer(stream.getvalue(), dtype=np.uint8)
             detectimage = cv2.imdecode(frame,1)
             results = detect_objects(interpreter, detectimage)
-
-            if not results:
-                print('Nothing detected')
-
             resizeimage = cv2.resize(detectimage, (480, 270))
-            stream_height, stream_width = resizeimage.shape[:2]
-            box_position = person_position(results, stream_height, stream_width)
 
-            #boxの描画
-            for box in box_position:
-                cv2.rectangle(resizeimage, (box[0],box[1]), (box[2],box[3]), (0, 255, 0), 2)
-                cv2.putText(resizeimage, box[5]+' '+box[4], (box[0],box[3]-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                print(f'{box[5]} ({box[0]},{box[1]}), ({box[2]},{box[3]}) score=>{box[4]}')
+            if results:
+                stream_height, stream_width = resizeimage.shape[:2]
+                box_position = person_position(results, stream_height, stream_width)
+
+                #boxの描画
+                for box in box_position:
+                    cv2.rectangle(resizeimage, (box[0],box[1]), (box[2],box[3]), (0, 255, 0), 2)
+                    cv2.putText(resizeimage, box[5]+' '+box[4], (box[0],box[3]-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    print(f'{box[5]} ({box[0]},{box[1]}), ({box[2]},{box[3]}) score=>{box[4]}')
+
+            else:
+                print('Nothing detected')
 
             cv2.imshow('image',resizeimage)
             stream.truncate()
