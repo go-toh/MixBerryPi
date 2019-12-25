@@ -43,7 +43,7 @@ def detect_objects(interpreter, image):
     #推論結果をresult(dict)に成形しresults(list)に格納
     results = []
     for i in range(count):
-        if scores[i] >= 0.5 and classes[i] == 0:#推論で50%以上の確率かつclassesがpersonの場合
+        if scores[i] >= 0.6 and classes[i] == 0:#推論で60%以上の確率かつclassesがpersonの場合
             result = {
             'bounding_box': boxes[i],
             'class_id': classes[i],
@@ -70,6 +70,9 @@ def person_position(results, height, width):
         set_box.append([after_xmin, after_ymax, after_xmax, after_ymin, score, label])
     return set_box
 
+def movement_detection():
+    pass
+
 if __name__ == '__main__':
     LABELS = ['person']
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
@@ -92,16 +95,21 @@ if __name__ == '__main__':
             results = detect_objects(interpreter, detectimage)
             resizeimage = cv2.resize(detectimage, (480, 270))
 
+            #personが検出されたとき
             if results:
                 stream_height, stream_width = resizeimage.shape[:2]
                 box_position = person_position(results, stream_height, stream_width)
 
                 #boxの描画
                 for box in box_position:
-                    cv2.rectangle(resizeimage, (box[0],box[1]), (box[2],box[3]), (0, 255, 0), 2)
-                    cv2.putText(resizeimage, box[5]+' '+box[4], (box[0],box[3]-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    cv2.line(resizeimage, (box[0],0), (box[0],stream_height), (0, 255, 0), 2) #left line
+                    center_line = int((box[0] + box[2]) / 2)
+                    cv2.line(resizeimage, (center_line,0), (center_line,stream_height), (255, 0, 0), 2) #center line
+                    cv2.line(resizeimage, (box[2],0), (box[2],stream_height), (0, 255, 0), 2) #right line
+                    cv2.putText(resizeimage, box[5]+' '+box[4], (box[0]+10, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                     print(f'{box[5]} ({box[0]},{box[1]}), ({box[2]},{box[3]}) score=>{box[4]}')
 
+            #personが検出されなかったとき
             else:
                 print('Nothing detected')
 
@@ -140,8 +148,11 @@ if __name__ == '__main__':
             cv2.imwrite('image/' + str(img_num) + '_' + str(box_num) + '_'+ box[5] + '.jpg',img)
 
             #境界線とラベルの描画
-            cv2.rectangle(fullimage, (box[0],box[1]), (box[2],box[3]), (0, 255, 0), 4)
-            cv2.putText(fullimage, box[5]+' '+box[4], (box[0],box[3]+50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 4)
+            cv2.line(fullimage, (box[0],0), (box[0],cap_height), (0, 255, 0), 2) #left line
+            full_center_line = int((box[0] + box[2]) / 2)
+            cv2.line(fullimage, (full_center_line,0), (full_center_line,cap_height), (255, 0, 0), 2) #center line
+            cv2.line(fullimage, (box[2],0), (box[2],cap_height), (0, 255, 0), 2) #right line
+            cv2.putText(fullimage, box[5]+' '+box[4], (box[0]+10, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
             print(f'{box[5]} ({box[0]},{box[1]}), ({box[2]},{box[3]}) score=>{box[4]}')
 
         #画像名の置換でresultを追加
