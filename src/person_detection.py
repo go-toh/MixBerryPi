@@ -43,7 +43,7 @@ def detect_objects(interpreter, image):
     #推論結果をresult(dict)に成形しresults(list)に格納
     results = []
     for i in range(count):
-        if scores[i] >= 0.6 and classes[i] == 0:#推論で60%以上の確率かつclassesがpersonの場合
+        if scores[i] >= 0.5 and classes[i] == 0:#推論で60%以上の確率かつclassesがpersonの場合
             result = {
             'bounding_box': boxes[i],
             'class_id': classes[i],
@@ -71,11 +71,15 @@ def person_position(results, height, width):
     return set_box
 
 def movement_detection():
+
     pass
 
 if __name__ == '__main__':
     LABELS = ['person']
+    person_flag = False
+
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
+    interpreter.set_num_threads(4)
     interpreter.allocate_tensors()
 
     #picameraの設定とlistの宣言
@@ -100,6 +104,16 @@ if __name__ == '__main__':
                 stream_height, stream_width = resizeimage.shape[:2]
                 box_position = person_position(results, stream_height, stream_width)
 
+                if not person_flag:
+                    for box in box_position:
+                        left_position , right_position = box[0], box[2]
+
+                    person_flag = True
+                    print('person status')
+                else:
+                    cv2.line(resizeimage, (left_position,0), (left_position,stream_height), (0, 0, 255), 2)
+                    cv2.line(resizeimage, (right_position,0), (right_position,stream_height), (0, 0, 255), 2)
+                    
                 #boxの描画
                 for box in box_position:
                     cv2.line(resizeimage, (box[0],0), (box[0],stream_height), (0, 255, 0), 2) #left line
@@ -111,6 +125,7 @@ if __name__ == '__main__':
 
             #personが検出されなかったとき
             else:
+                person_flag = False
                 print('Nothing detected')
 
             cv2.imshow('image',resizeimage)
