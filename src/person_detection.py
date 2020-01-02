@@ -79,13 +79,13 @@ if __name__ == '__main__':
     person_flag = False
 
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
-    interpreter.set_num_threads(4)
+    interpreter.set_num_threads(3)
     interpreter.allocate_tensors()
 
     #picameraの設定とlistの宣言
     with picamera.PiCamera() as camera:
         camera.resolution = (480, 270)
-        camera.framerate = 30
+        camera.framerate = 60
         stream = io.BytesIO()
         path_array = []
         result_array = []
@@ -113,7 +113,19 @@ if __name__ == '__main__':
                 else:
                     cv2.line(resizeimage, (left_position,0), (left_position,stream_height), (0, 0, 255), 2)
                     cv2.line(resizeimage, (right_position,0), (right_position,stream_height), (0, 0, 255), 2)
+                    for box in box_position:
+                        left_position_after, right_position_after = box[0], box[2]
+                        center_position = (left_position_after + right_position_after) / 2
                     
+                    if not left_position < center_position < right_position:
+                        result_array.append(results)
+                        path = image_cap(480, 270)#16:9
+                        #path = image_cap(3280, 1845)#16:9
+                        path_array.append(path)
+                        person_flag = False
+                        print("capture")
+                        
+
                 #boxの描画
                 for box in box_position:
                     cv2.line(resizeimage, (box[0],0), (box[0],stream_height), (0, 255, 0), 2) #left line
@@ -159,8 +171,8 @@ if __name__ == '__main__':
         for box_num, box in enumerate(cap_box_position):
 
             #画像の切り出し.img_numが画像のインデックス.box_numが検出領域ごとのインデックス
-            img = fullimage[box[3]:box[1], box[0]:box[2]]
-            cv2.imwrite('image/' + str(img_num) + '_' + str(box_num) + '_'+ box[5] + '.jpg',img)
+            #img = fullimage[box[3]:box[1], box[0]:box[2]]
+            #cv2.imwrite('image/' + str(img_num) + '_' + str(box_num) + '_'+ box[5] + '.jpg',img)
 
             #境界線とラベルの描画
             cv2.line(fullimage, (box[0],0), (box[0],cap_height), (0, 255, 0), 2) #left line
