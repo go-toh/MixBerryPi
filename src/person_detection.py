@@ -119,13 +119,13 @@ if __name__ == '__main__':
                     
                     if not left_position < center_position < right_position:
                         result_array.append(results)
-                        path = image_cap(480, 270)#16:9
+                        #path = image_cap(480, 270)#16:9
+                        path = image_cap(960, 540)#16:9
                         #path = image_cap(3280, 1845)#16:9
                         path_array.append(path)
                         person_flag = False
                         print("capture")
                         
-
                 #boxの描画
                 for box in box_position:
                     cv2.line(resizeimage, (box[0],0), (box[0],stream_height), (0, 255, 0), 2) #left line
@@ -171,8 +171,12 @@ if __name__ == '__main__':
         for box_num, box in enumerate(cap_box_position):
 
             #画像の切り出し.img_numが画像のインデックス.box_numが検出領域ごとのインデックス
-            #img = fullimage[box[3]:box[1], box[0]:box[2]]
-            #cv2.imwrite('image/' + str(img_num) + '_' + str(box_num) + '_'+ box[5] + '.jpg',img)
+            left_img = fullimage[0:cap_height, 0:box[0]]
+            object_img = fullimage[0:cap_height, box[0]:box[2]]
+            right_img = fullimage[0:cap_height, box[2]:cap_width]
+            cv2.imwrite('image/' + str(img_num) + '_' + str(box_num) + '_'+ box[5] + 'left.jpg',left_img)
+            cv2.imwrite('image/' + str(img_num) + '_' + str(box_num) + '_'+ box[5] + 'object.jpg',object_img)
+            cv2.imwrite('image/' + str(img_num) + '_' + str(box_num) + '_'+ box[5] + 'right.jpg',right_img)
 
             #境界線とラベルの描画
             cv2.line(fullimage, (box[0],0), (box[0],cap_height), (0, 255, 0), 2) #left line
