@@ -79,13 +79,13 @@ if __name__ == '__main__':
     person_flag = False
 
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
-    interpreter.set_num_threads(3)
+    interpreter.set_num_threads(4)
     interpreter.allocate_tensors()
 
     #picameraの設定とlistの宣言
     with picamera.PiCamera() as camera:
         camera.resolution = (480, 270)
-        camera.framerate = 60
+        camera.framerate = 15
         stream = io.BytesIO()
         path_array = []
         result_array = []
@@ -120,8 +120,8 @@ if __name__ == '__main__':
                     if not left_position < center_position < right_position:
                         result_array.append(results)
                         #path = image_cap(480, 270)#16:9
-                        path = image_cap(960, 540)#16:9
-                        #path = image_cap(3280, 1845)#16:9
+                        #path = image_cap(960, 540)#16:9
+                        path = image_cap(3280, 1845)#16:9
                         path_array.append(path)
                         person_flag = False
                         print("capture")
