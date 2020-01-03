@@ -84,6 +84,7 @@ if __name__ == '__main__':
     'toothbrush']
 
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
+    interpreter.set_num_threads(4)
     interpreter.allocate_tensors()
 
     #picameraの設定とlistの宣言
