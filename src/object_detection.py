@@ -90,7 +90,8 @@ if __name__ == '__main__':
     #picameraの設定とlistの宣言
     with picamera.PiCamera() as camera:
         camera.resolution = (480, 270)
-        camera.framerate = 30
+        camera.framerate = 15
+        
         stream = io.BytesIO()
         path_array = []
         result_array = []
