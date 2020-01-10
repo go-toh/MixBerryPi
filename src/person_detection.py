@@ -70,10 +70,6 @@ def person_position(results, height, width):
         set_box.append([after_xmin, after_ymax, after_xmax, after_ymin, score, label])
     return set_box
 
-def movement_detection():
-
-    pass
-
 if __name__ == '__main__':
     LABELS = ['person']
     person_flag = False
@@ -86,6 +82,8 @@ if __name__ == '__main__':
     with picamera.PiCamera() as camera:
         camera.resolution = (480, 270)
         camera.framerate = 15
+        #camera.shutter_speed = 10000
+        #camera.iso = 800
         stream = io.BytesIO()
         path_array = []
         result_array = []
@@ -138,7 +136,7 @@ if __name__ == '__main__':
             #personが検出されなかったとき
             else:
                 person_flag = False
-                print('Nothing detected')
+                print('Not detected')
 
             cv2.imshow('image',resizeimage)
             stream.truncate()
