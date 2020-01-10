@@ -28,26 +28,30 @@ def get_output_tensor(interpreter, index):
 
 #物体検出の推論
 def detect_objects(interpreter, image):
+    detect_flag = False
     set_input_tensor(interpreter, image)
     interpreter.invoke()
 
     boxes = get_output_tensor(interpreter, 0)
     classes = get_output_tensor(interpreter, 1)
     scores = get_output_tensor(interpreter, 2)
-    person_classes_index = [i for i ,class_result in enumerate(classes) if class_result == 0]
+    count = int(get_output_tensor(interpreter, 3))
     
-    if person_classes_index:
-        exist_scores = [scores[i] for i in person_classes_index]
-        max_scores = exist_scores.index(max(exist_scores))
-
-        if scores[max_scores] >= 0.5:
-            detect_flag = True
-            target_box = boxes[max_scores]
-                
+    scores_array = []
+    boxs_array = []
+    
+    for i in range(count):
+        if scores[i] >= 0.5 and classes[i] == 0:
+            scores_array.append(scores[i])
+    
+    if scores_array:
+        max_score = scores_array.index(max(scores_array))
+        target_box = boxes[max_score]
+        detect_flag = True
     else:
-        detect_flag = False
         target_box = []
-    
+        detect_flag = False
+        
     return detect_flag, target_box
 
 def person_position(result, width):
