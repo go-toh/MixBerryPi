@@ -38,7 +38,6 @@ def detect_objects(interpreter, image):
     count = int(get_output_tensor(interpreter, 3))
     
     scores_array = []
-    boxs_array = []
     
     for i in range(count):
         if scores[i] >= 0.5 and classes[i] == 0:
@@ -130,13 +129,4 @@ if __name__ == '__main__':
             stream.seek(0)
 
     th.join()
-    cv2.destroyAllWindows()     
-
-
-    
-
-        
-
-    
-    
-
+    cv2.destroyAllWindows()    
