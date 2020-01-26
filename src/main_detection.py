@@ -1,4 +1,5 @@
 from tflite_runtime.interpreter import Interpreter
+from slacker import Slacker
 import picamera
 import numpy as np
 import cv2
@@ -31,23 +32,26 @@ def detect_objects(interpreter, image):
     set_input_tensor(interpreter, image)
     interpreter.invoke()
 
+    detect_flag = False
+    scores_array = []
+
     boxes = get_output_tensor(interpreter, 0)
     classes = get_output_tensor(interpreter, 1)
     scores = get_output_tensor(interpreter, 2)
-    person_classes_index = [i for i ,class_result in enumerate(classes) if class_result == 0]
+    count = int(get_output_tensor(interpreter, 3))
     
-    if person_classes_index:
-        exist_scores = [scores[i] for i in person_classes_index]
-        max_scores = exist_scores.index(max(exist_scores))
-
-        if scores[max_scores] >= 0.5:
-            detect_flag = True
-            target_box = boxes[max_scores]
-                
+    for i in range(count):
+        if scores[i] >= 0.5 and classes[i] == 0:
+            scores_array.append(scores[i])
+    
+    if scores_array:
+        max_score = scores_array.index(max(scores_array))
+        target_box = boxes[max_score]
+        detect_flag = True
     else:
-        detect_flag = False
         target_box = []
-    
+        detect_flag = False
+        
     return detect_flag, target_box
 
 def person_position(result, width):
@@ -67,9 +71,21 @@ def image_cap(width, height, count):
     camera.resolution = (480, 270)
     return filepath
 
+#slackへの画像アップロード,Hubotを使用
+def upload_image(file):
+    #各自のワークスペースのAPIトークン
+    token = 'api-token'
+    #任意のチャンネル
+    channel = 'channel'
+    upload_file = file
+
+    slacker = Slacker(token)
+    slacker.files.upload(file_=upload_file, channels=channel)
+
 if __name__ == '__main__':
     interpreter = Interpreter("model/mobilenet_ssd_v2_coco_quant_postprocess.tflite")
     set_interpreter(interpreter)
+
 
     with picamera.PiCamera() as camera:
         image_width, image_height = 480,270
@@ -82,6 +98,7 @@ if __name__ == '__main__':
         key_flag = True
         person_detect_flag = False
         push_count = 0
+        filepath_array = []
 
         th = threading.Thread(target=wait_input)
         th.start()
@@ -114,7 +131,8 @@ if __name__ == '__main__':
                 if not save_left_line < center_line < save_right_line:
                     push_count += 1
                     print(push_count)
-                    file_path = image_cap(960, 540, push_count)
+                    file_path = image_cap(1920, 1080, push_count)
+                    filepath_array.append(file_path)
                     person_detect_flag = False
 
             else:
@@ -126,13 +144,7 @@ if __name__ == '__main__':
             stream.seek(0)
 
     th.join()
-    cv2.destroyAllWindows()     
+    #cv2.destroyAllWindows()
 
-
-    
-
-        
-
-    
-    
-
+    for file in filepath_array:
+        upload_image(file)
