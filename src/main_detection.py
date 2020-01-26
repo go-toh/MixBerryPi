@@ -29,6 +29,7 @@ def get_output_tensor(interpreter, index):
 
 #物体検出の推論
 def detect_objects(interpreter, image):
+    detect_flag = False
     set_input_tensor(interpreter, image)
     interpreter.invoke()
 
