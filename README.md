@@ -8,5 +8,9 @@ RaspberrPiを用いて自動で授業のアーカイブ化ができるシステ�
 
 ### 動作確認環境
 * Raspbian-buster(10.2)
-    * tflite-runtime==1.15.0
-    * OpenCV==4.1.0
+* tflite-runtime==1.15.0
+* OpenCV==4.1.0
+
+参考:https://github.com/PINTO0309/TensorflowLite-bin
+
+closed 
