@@ -5,6 +5,8 @@
 ## これはなに？
 
 RaspberrPiを用いて自動で授業のアーカイブ化ができるシステム構築を目指したプロジェクト。
+リアルタイム映像をTensorFlowで人認識、Slackと共有
+高校の課題研究の成果
 
 ### 動作確認環境
 * Raspbian-buster(10.2)
@@ -13,4 +15,4 @@ RaspberrPiを用いて自動で授業のアーカイブ化ができるシステ�
 
 参考:https://github.com/PINTO0309/TensorflowLite-bin
 
-closed 
+2020/01/30 closed 
